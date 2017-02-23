@@ -123,15 +123,15 @@ class Neuron
 		void   update_input_weights				(Layer &previous_layer  );
 
 	private:
-		static double step               (double x) { return x <= 0 ? 0.0 : 1.0; }
-		static double sigmoid            (double x) { return (1 / 1 + exp(-x));  }
-		static double absolute_sigmoid   (double x) { return (1 / 1 + fabs(-x)); }
+		static double step               (double x) { return x <= 0.0 ? 0.0 : 1.0; }
+		static double sigmoid            (double x) { return (1.0 / 1.0 + exp(-x));  }
+		static double absolute_sigmoid   (double x) { return (1.0 / 1.0 + fabs(-x)); }
 		static double hyperbolic_tangent (double x) { return tanh(x);            }
 
 		static double step_derivative				(double x) { return 0.0; /*dirac delta unsupported*/}
-		static double sigmoid_derivative            (double x) { return (sigmoid(x)*(1 - sigmoid(x)));  }
-		static double absolute_sigmoid_derivative   (int x)    { return (1/((x+1)^2));                  }
-		static double hyperbolic_tangent_derivative (int x)    { return (1-(x^2));                      }
+		static double sigmoid_derivative            (double x) { return ( sigmoid(x)*(1.0 - sigmoid(x))); }
+		//static double absolute_sigmoid_derivative   (double x)    { return ( 1.0/((x+1.0)^2));                 }
+		static double hyperbolic_tangent_derivative (double x)    { return (double)( 1.0/cosh(x)) * (1.0/cosh(x)); }
 
 		static double randomWeight(void)	 { return rand() / double(RAND_MAX); }
 		double sumDOW (const Layer &next_layer) const;
@@ -149,8 +149,8 @@ class Neuron
 
 // ---------------- Constructors / Destructors -------------------
 
-double Neuron::learning_rate = 0.15;
-double Neuron::momentum      = 0.15;
+double Neuron::learning_rate = 0.2;
+double Neuron::momentum      = 0.5;
 
 Neuron::Neuron(unsigned num_outputs, unsigned _index)
 {
@@ -193,6 +193,7 @@ void Neuron::calculate_output_layer_gradients(double expected_output)
 
 void Neuron::calculate_hidden_layer_gradients(const Layer &next_layer)
 {
+	// sum of the derivative of the weights of the next layer
 	double dow = sumDOW(next_layer);
 	gradient = dow * hyperbolic_tangent_derivative(output);
 }
@@ -204,15 +205,14 @@ void Neuron::update_input_weights(Layer &previous_layer)
 		Neuron &_neuron = previous_layer[neuron]; // easier to read
 
 		double old_delta_weight = _neuron.output_weights[index].delta_weight;
-		double new_delta_weight = learning_rate *_neuron.get_output() * gradient + momentum * old_delta_weight;
-
+		double new_delta_weight = (learning_rate * _neuron.get_output() * gradient ) + (momentum * old_delta_weight);
+		//double new_delta_weight = (learning_rate * gradient) + (momentum * old_delta_weight);
 		_neuron.output_weights[index].delta_weight = new_delta_weight;
-		_neuron.output_weights[index].weight = _neuron.output_weights[index].weight + new_delta_weight;
+		_neuron.output_weights[index].weight	  += new_delta_weight;
 
 
 	}
 }
-
 
 double Neuron::sumDOW(const Layer &next_layer) const
 {
@@ -235,17 +235,19 @@ class NeuralNetwork
 {
 	public:
 		
-		NeuralNetwork		(const vector<unsigned> &network_topology);
-		void feedforward	(const vector<double>   &input);
-		void backpropogate	(const vector<double>   &expected_output);
-		void get_output		(vector<double>			&predicted_output) const;
-		
+		NeuralNetwork					(const vector<unsigned> &network_topology);
+		void feedforward				(const vector<double>   &input);
+		void backpropogate				(const vector<double>   &expected_output);
+		void get_output					(vector<double>			&predicted_output) const;
+		double get_recent_average_error() { return this->recent_average_error; };
 
 
 
 	private:
 		vector<Layer> network_layer; // network_layer[layer_num][neuron_num]
 		double error;
+		double recent_average_error;
+		double recent_average_smoothing_factor;
 
 };
 
@@ -324,9 +326,9 @@ void NeuralNetwork::backpropogate(const vector<double> &expected_output)
 	}
 	// Normalize
 	error = error / (2*(output_layer.size() - 1));
-	// error = sqrt(error);
+	error = sqrt(error);
 
-
+	recent_average_error = (recent_average_error * recent_average_smoothing_factor + error) / (recent_average_smoothing_factor + 1.0);
 
 	// Calculate Output Layer gradient
 
@@ -435,12 +437,12 @@ int main()
 		assert(expected_output.size() == network_topology.back());
 		myNetwork.backpropogate(expected_output);
 
-		//cout << "Network recent average error : " << myNetwork.get_recent_average_error() << endl;
-		if (training_pass % 4 == 0)
+		cout << "Network recent average error : " << myNetwork.get_recent_average_error() << endl;
+		/*if (training_pass % 4 == 0)
 		{
 			cin.get();
 			system("cls");
-		}
+		}*/
 	}
 	
 	cout << endl << "Trained." << endl;

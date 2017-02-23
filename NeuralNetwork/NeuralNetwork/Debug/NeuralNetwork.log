@@ -1,3 +1,2 @@
 ﻿  NeuralNetwork.cpp
-  NeuralNetwork.vcxproj -> C:\Users\tiwathia\Documents\GitHub\NeuralNetwork_cpp\NeuralNetwork\Debug\NeuralNetwork.exe
-  NeuralNetwork.vcxproj -> C:\Users\tiwathia\Documents\GitHub\NeuralNetwork_cpp\NeuralNetwork\Debug\NeuralNetwork.pdb (Full PDB)
+c:\users\tiwathia\documents\github\neuralnetwork_cpp\neuralnetwork\neuralnetwork\neuralnetwork.cpp(133): error C2296: '^': illegal, left operand has type 'double'
