@@ -14,6 +14,8 @@
 #include <cmath>
 #include <fstream>
 #include <sstream>
+#include <ctime>
+#include "NeuralNetwork.h"
 using namespace std;
 
 
@@ -149,8 +151,8 @@ class Neuron
 
 // ---------------- Constructors / Destructors -------------------
 
-double Neuron::learning_rate = 0.2;
-double Neuron::momentum      = 0.5;
+double Neuron::learning_rate = 0.15;
+double Neuron::momentum      = 0.95;
 
 Neuron::Neuron(unsigned num_outputs, unsigned _index)
 {
@@ -207,6 +209,7 @@ void Neuron::update_input_weights(Layer &previous_layer)
 		double old_delta_weight = _neuron.output_weights[index].delta_weight;
 		double new_delta_weight = (learning_rate * _neuron.get_output() * gradient ) + (momentum * old_delta_weight);
 		//double new_delta_weight = (learning_rate * gradient) + (momentum * old_delta_weight);
+		//double new_delta_weight = (learning_rate * gradient);
 		_neuron.output_weights[index].delta_weight = new_delta_weight;
 		_neuron.output_weights[index].weight	  += new_delta_weight;
 
@@ -392,11 +395,56 @@ void display_vector(string label , vector <double> &v)
 	cout << endl;
 }
 
+int ReverseInt(int i)
+{
+	unsigned char ch1, ch2, ch3, ch4;
+	ch1 = i & 255;
+	ch2 = (i >> 8) & 255;
+	ch3 = (i >> 16) & 255;
+	ch4 = (i >> 24) & 255;
+	return((int)ch1 << 24) + ((int)ch2 << 16) + ((int)ch3 << 8) + ch4;
+}
+void ReadMNIST(int NumberOfImages, int DataOfAnImage, vector<vector<double>> &arr)
+{
+	arr.resize(NumberOfImages, vector<double>(DataOfAnImage));
+	ifstream file("C:\\Users\\tiwathia\\Documents\\GitHub\\NeuralNetwork_cpp\\Training Data\\MNIST\\t10k-images.idx3-ubyte", ios::binary);
+	if (file.is_open())
+	{
+		int magic_number = 0;
+		int number_of_images = 0;
+		int n_rows = 0;
+		int n_cols = 0;
+		file.read((char*)&magic_number, sizeof(magic_number));
+		magic_number = ReverseInt(magic_number);
+		file.read((char*)&number_of_images, sizeof(number_of_images));
+		number_of_images = ReverseInt(number_of_images);
+		file.read((char*)&n_rows, sizeof(n_rows));
+		n_rows = ReverseInt(n_rows);
+		file.read((char*)&n_cols, sizeof(n_cols));
+		n_cols = ReverseInt(n_cols);
+		for (int i = 0; i<number_of_images; ++i)
+		{
+			for (int r = 0; r<n_rows; ++r)
+			{
+				for (int c = 0; c<n_cols; ++c)
+				{
+					unsigned char temp = 0;
+					file.read((char*)&temp, sizeof(temp));
+					arr[i][(n_rows*r) + c] = (double)temp;
+					cout << arr[i][(n_rows*r) + c];
+				}
+				cout << endl;
+			}
+			cin.get();
+		}
+	}
+}
+
 
 int main()
 {
 
-	TrainingData training_data("C:\\Users\\tiwathia\\Documents\\GitHub\\NeuralNetwork_cpp\\Training Data\\XOR_training.txt");
+	TrainingData training_data("C:\\Users\\tiwathia\\Documents\\GitHub\\NeuralNetwork_cpp\\Training Data\\XOR\\XOR_training_250.txt");
 	vector <unsigned> network_topology;
 	training_data.get_topology(network_topology);
 	// e.g [3,2,1] creates 3 input neurons
@@ -414,12 +462,15 @@ int main()
 	vector<double> predicted_output;
 
 	int training_pass = 0;
+
+	clock_t timer;
+	timer = clock();
 	while (!training_data.isEof())
 	{
 		++training_pass;
-		cout << endl << "----------------------------- " << endl;
-		cout << endl << "Pass " << training_pass;
-		cout << endl << "----------------------------- " << endl << endl;
+		cout << "----------------------------- " << endl;
+		cout << "     Training Example : " << training_pass << endl;
+		cout << "----------------------------- " << endl << endl;
 
 		// Get new input data and feed it forward
 		if (training_data.get_next_input(input) != network_topology[0]) break;
@@ -438,15 +489,24 @@ int main()
 		myNetwork.backpropogate(expected_output);
 
 		cout << "Network recent average error : " << myNetwork.get_recent_average_error() << endl;
-		/*if (training_pass % 4 == 0)
+		if (training_pass % 4 == 0)
 		{
-			cin.get();
-			system("cls");
-		}*/
+			cout << endl << endl << "#######################################" << endl << endl;
+			//cin.get();
+			//system("cls");
+		}
+		else cout << "----------------------------- " << endl << endl;
 	}
-	
-	cout << endl << "Trained." << endl;
+	double duration = (std::clock() - timer) / (double)CLOCKS_PER_SEC;
+	cout << endl << "      TRAINED IN : " << duration << " secs" << endl;
+	cout << endl << endl << "#######################################" << endl << endl;
+
 	cin.get();
+	
+	
+	vector<vector<double>> ar;
+	ReadMNIST(10000, 784, ar);
+	
 	return 0;
 }
 
