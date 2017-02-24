@@ -14,6 +14,7 @@
 #include <cmath>
 #include <fstream>
 #include <sstream>
+#include <ctime>
 using namespace std;
 
 
@@ -149,8 +150,8 @@ class Neuron
 
 // ---------------- Constructors / Destructors -------------------
 
-double Neuron::learning_rate = 0.2;
-double Neuron::momentum      = 0.5;
+double Neuron::learning_rate = 0.15;
+double Neuron::momentum      = 0.95;
 
 Neuron::Neuron(unsigned num_outputs, unsigned _index)
 {
@@ -207,6 +208,7 @@ void Neuron::update_input_weights(Layer &previous_layer)
 		double old_delta_weight = _neuron.output_weights[index].delta_weight;
 		double new_delta_weight = (learning_rate * _neuron.get_output() * gradient ) + (momentum * old_delta_weight);
 		//double new_delta_weight = (learning_rate * gradient) + (momentum * old_delta_weight);
+		//double new_delta_weight = (learning_rate * gradient);
 		_neuron.output_weights[index].delta_weight = new_delta_weight;
 		_neuron.output_weights[index].weight	  += new_delta_weight;
 
@@ -396,7 +398,7 @@ void display_vector(string label , vector <double> &v)
 int main()
 {
 
-	TrainingData training_data("C:\\Users\\tiwathia\\Documents\\GitHub\\NeuralNetwork_cpp\\Training Data\\XOR_training.txt");
+	TrainingData training_data("C:\\Users\\tiwathia\\Documents\\GitHub\\NeuralNetwork_cpp\\Training Data\\XOR_training_250.txt");
 	vector <unsigned> network_topology;
 	training_data.get_topology(network_topology);
 	// e.g [3,2,1] creates 3 input neurons
@@ -414,12 +416,15 @@ int main()
 	vector<double> predicted_output;
 
 	int training_pass = 0;
+
+	clock_t timer;
+	timer = clock();
 	while (!training_data.isEof())
 	{
 		++training_pass;
-		cout << endl << "----------------------------- " << endl;
-		cout << endl << "Pass " << training_pass;
-		cout << endl << "----------------------------- " << endl << endl;
+		cout << "----------------------------- " << endl;
+		cout << "     Training Example : " << training_pass << endl;
+		cout << "----------------------------- " << endl << endl;
 
 		// Get new input data and feed it forward
 		if (training_data.get_next_input(input) != network_topology[0]) break;
@@ -438,14 +443,17 @@ int main()
 		myNetwork.backpropogate(expected_output);
 
 		cout << "Network recent average error : " << myNetwork.get_recent_average_error() << endl;
-		/*if (training_pass % 4 == 0)
+		if (training_pass % 4 == 0)
 		{
-			cin.get();
-			system("cls");
-		}*/
+			cout << endl << endl << "#######################################" << endl << endl;
+			//cin.get();
+			//system("cls");
+		}
+		else cout << "----------------------------- " << endl << endl;
 	}
-	
-	cout << endl << "Trained." << endl;
+	double duration = (std::clock() - timer) / (double)CLOCKS_PER_SEC;
+	cout << endl << "      TRAINED IN : " << duration << " secs" << endl;
+	cout << endl << endl << "#######################################" << endl << endl;
 	cin.get();
 	return 0;
 }
