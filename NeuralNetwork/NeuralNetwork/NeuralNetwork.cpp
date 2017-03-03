@@ -431,6 +431,7 @@ void ReadMNIST(int NumberOfImages, int DataOfAnImage, vector<vector<double>> &ar
 					unsigned char temp = 0;
 					file.read((char*)&temp, sizeof(temp));
 					arr[i][(n_rows*r) + c] = (double)temp;
+					if (arr[i][(n_rows*r) + c] > 0) arr[i][(n_rows*r) + c] = 1;
 					cout << arr[i][(n_rows*r) + c];
 				}
 				cout << endl;
@@ -489,11 +490,10 @@ int main()
 		myNetwork.backpropogate(expected_output);
 
 		cout << "Network recent average error : " << myNetwork.get_recent_average_error() << endl;
-		if (training_pass % 4 == 0)
+		if (training_pass == 1 || training_pass == 2 || training_pass == 3 || training_pass == 4)
 		{
-			cout << endl << endl << "#######################################" << endl << endl;
+			//cout << endl << endl << "#######################################" << endl << endl;
 			//cin.get();
-			//system("cls");
 		}
 		else cout << "----------------------------- " << endl << endl;
 	}
@@ -505,7 +505,7 @@ int main()
 	
 	
 	vector<vector<double>> ar;
-	ReadMNIST(10000, 784, ar);
+	//ReadMNIST(10000, 784, ar);
 	
 	return 0;
 }
